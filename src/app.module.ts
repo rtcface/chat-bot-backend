@@ -10,6 +10,10 @@ import { ApiKey } from './shared/entities/api-key.entity';
 import { Conversation } from './shared/entities/conversation.entity';
 import { Message } from './shared/entities/message.entity';
 import { Role } from './shared/entities/role.entity';
+import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
+import { RolesModule } from './roles/roles.module';
+import { CoreModule } from './core/core.module';
 
 @Module({
   imports: [
@@ -33,6 +37,10 @@ import { Role } from './shared/entities/role.entity';
         },
       ],
     }),
+    AuthModule,
+    ChatModule,
+    RolesModule,
+    CoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

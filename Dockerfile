@@ -1,4 +1,6 @@
-# Build stage
+# Multi-stage build for production optimization
+
+# Stage 1: Build stage
 FROM node:18-alpine AS builder
 
 # Set working directory
@@ -8,15 +10,15 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
 
-# Build application
+# Build the application
 RUN npm run build
 
-# Production stage
+# Stage 2: Production stage
 FROM node:18-alpine AS production
 
 # Install dumb-init for proper signal handling
@@ -29,18 +31,19 @@ RUN adduser -S nestjs -u 1001
 # Set working directory
 WORKDIR /app
 
-# Copy package files with proper permissions
-COPY --chown=nestjs:nodejs package*.json ./
+# Copy package files
+COPY package*.json ./
 
-# Install only production dependencies (with retry logic)
-RUN npm ci --only=production --legacy-peer-deps || \
-    (npm cache clean --force && npm ci --only=production --legacy-peer-deps) && \
-    npm cache clean --force
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
 
-# Copy built application
+# Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Change ownership
+# Copy other necessary files
+COPY --from=builder /app/.env.example ./.env.example
+
+# Change ownership of the app directory
 RUN chown -R nestjs:nodejs /app
 USER nestjs
 
@@ -51,6 +54,8 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node dist/main.js health
 
-# Start application
+# Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
 CMD ["node", "dist/main.js"]

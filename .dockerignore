@@ -5,6 +5,8 @@ npm-debug.log*
 # IDE
 .vscode
 .idea
+*.swp
+*.swo
 
 # OS
 .DS_Store
@@ -14,34 +16,38 @@ Thumbs.db
 .git
 .gitignore
 
-# Docker
-Dockerfile*
-docker-compose*
-
-# Environment files
-.env*
-!.env.example
-
-# Logs
-logs
-*.log
-
-# Coverage
+# Testing
 coverage
 .nyc_output
+test-results
+*.log
 
-# Build
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
 dist
-
-# Tests
-test
-*.spec.ts
-*.test.ts
+build
 
 # Documentation
 README.md
-docs
+docs/
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Development files
+*.test.ts
+*.spec.ts
+jest.config.js
+.eslintrc.js
+.prettierrc
+nest-cli.json
 
 # Temporary files
-.tmp
-temp
+*.tmp
+*.temp

@@ -1,13 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import {
   ApiKey,
   ApiKeyStatus,
   ApiKeyPermission,
 } from '../shared/entities/api-key.entity';
-import { User } from '../shared/entities/user.entity';
+import { User, UserRole } from '../shared/entities/user.entity';
 import { randomBytes } from 'crypto';
+import { RegisterDto, AuthResponseDto } from '../shared/dto/auth.dto';
 
 export interface ApiKeyValidationResult {
   isValid: boolean;
@@ -25,6 +28,7 @@ export class AuthService {
     private readonly apiKeyRepository: Repository<ApiKey>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
   ) {}
 
   /**
@@ -177,6 +181,106 @@ export class AuthService {
       permissions.includes(requiredPermission) ||
       permissions.includes(ApiKeyPermission.ADMIN)
     );
+  }
+
+  /**
+   * Register a new user
+   */
+  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+    // Check if user already exists
+    const existingUser = await this.userRepository.findOne({
+      where: { email: registerDto.email },
+    });
+
+    if (existingUser) {
+      throw new Error('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    // Create user
+    const user = this.userRepository.create({
+      email: registerDto.email,
+      name: registerDto.name,
+      password: hashedPassword,
+      role: registerDto.role ? (registerDto.role as UserRole) : UserRole.USER,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    // Generate JWT token
+    const payload = {
+      sub: savedUser.id,
+      email: savedUser.email,
+      role: savedUser.role,
+    };
+    const accessToken = this.jwtService.sign(payload);
+
+    this.logger.log(`User registered: ${savedUser.email}`);
+
+    return {
+      accessToken,
+      user: {
+        id: savedUser.id,
+        email: savedUser.email,
+        name: savedUser.name,
+        role: savedUser.role,
+      },
+      expiresIn: 3600, // 1 hour
+    };
+  }
+
+  /**
+   * Login user with email and password
+   */
+  async login(email: string, password: string): Promise<AuthResponseDto> {
+    // Find user by email
+    const user = await this.userRepository.findOne({
+      where: { email, isActive: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Generate JWT token
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+
+    this.logger.log(`User logged in: ${user.email}`);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+      expiresIn: 3600, // 1 hour
+    };
+  }
+
+  /**
+   * Validate JWT token and return user
+   */
+  async validateUser(payload: any): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub, isActive: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
   }
 
   /**
