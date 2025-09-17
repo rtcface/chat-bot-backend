@@ -1,7 +1,7 @@
 # Multi-stage build for production optimization
 
 # Stage 1: Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -19,7 +19,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
@@ -31,11 +31,18 @@ RUN adduser -S nestjs -u 1001
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and patches
 COPY package*.json ./
+COPY patches ./patches
 
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install all dependencies (including dev deps for patch-package)
+RUN npm ci
+
+# Apply patches
+RUN npm run postinstall
+
+# Remove dev dependencies but keep patched files
+RUN npm prune --production && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist

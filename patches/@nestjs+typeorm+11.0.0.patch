@@ -1,0 +1,12 @@
+diff --git a/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js b/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js
+index ac6eeb1..c6f688e 100644
+--- a/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js
++++ b/node_modules/@nestjs/typeorm/dist/common/typeorm.utils.js
+@@ -11,6 +11,7 @@ exports.getDataSourceName = getDataSourceName;
+ const common_1 = require("@nestjs/common");
+ const operators_1 = require("rxjs/operators");
+ const typeorm_1 = require("typeorm");
++const crypto = require("crypto");
+ const circular_dependency_exception_1 = require("../exceptions/circular-dependency.exception");
+ const typeorm_constants_1 = require("../typeorm.constants");
+ const logger = new common_1.Logger('TypeOrmModule');
