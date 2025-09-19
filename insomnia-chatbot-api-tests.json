@@ -1,0 +1,537 @@
+{
+    "_type": "export",
+    "__export_format": 4,
+    "__export_date": "2025-09-19T17:31:00.000Z",
+    "__export_source": "insomnia.desktop.app:v8.0.0",
+    "resources": [
+        {
+            "_id": "wrk_chatbot",
+            "parentId": null,
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "Chatbot Backend API Testing",
+            "description": "Suite completa de pruebas para API NestJS de chatbot",
+            "_type": "workspace"
+        },
+        {
+            "_id": "env_chatbot",
+            "parentId": "wrk_chatbot",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "Local NestJS",
+            "data": {
+                "base_url": "http://localhost:3000",
+                "test_user_email": "test@example.com",
+                "test_user_password": "TestPass123!",
+                "jwt_token": "",
+                "conversation_id": "",
+                "api_key": "",
+                "test_role_id": ""
+            },
+            "_type": "environment"
+        },
+        {
+            "_id": "fld_auth",
+            "parentId": "wrk_chatbot",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "1. Authentication",
+            "description": "Pruebas de registro, login y gestión de usuarios",
+            "_type": "request_group"
+        },
+        {
+            "_id": "fld_chat",
+            "parentId": "wrk_chatbot",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2. Chat & Conversations",
+            "description": "Pruebas de chat, conversaciones y mensajería",
+            "_type": "request_group"
+        },
+        {
+            "_id": "fld_health",
+            "parentId": "wrk_chatbot",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "3. Health & System",
+            "description": "Pruebas de health checks y estado del sistema",
+            "_type": "request_group"
+        },
+        {
+            "_id": "req_health_basic",
+            "parentId": "fld_health",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "7.1.1 - Health Check Básico",
+            "description": "Verificar que el servicio está operativo",
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "headers": [],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Service is healthy",
+                    "code": "pm.test(\"Service is healthy\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData.status).to.eql('ok');\n    pm.expect(jsonData.uptime).to.be.above(0);\n});"
+                },
+                {
+                    "name": "Response time < 500ms",
+                    "code": "pm.test(\"Response time < 500ms\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(500);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_register_success",
+            "parentId": "fld_auth",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "1.1.1 - Registro Exitoso",
+            "description": "Registrar un nuevo usuario exitosamente",
+            "method": "POST",
+            "url": "{{base_url}}/auth/register",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"email\": \"{{test_user_email}}\",\n  \"password\": \"{{test_user_password}}\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 201",
+                    "code": "pm.test(\"Status is 201\", function () {\n    pm.response.to.have.status(201);\n});"
+                },
+                {
+                    "name": "Has access token",
+                    "code": "pm.test(\"Has access token\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('access_token');\n    pm.expect(jsonData.access_token).to.be.a('string');\n    pm.expect(jsonData.access_token.length).to.be.above(10);\n});"
+                },
+                {
+                    "name": "Has user data",
+                    "code": "pm.test(\"Has user data\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('user');\n    pm.expect(jsonData.user.email).to.eql(pm.environment.get('test_user_email'));\n});"
+                },
+                {
+                    "name": "Save JWT token",
+                    "code": "pm.test(\"Save JWT token\", function () {\n    const jsonData = pm.response.json();\n    pm.environment.set('jwt_token', jsonData.access_token);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_register_duplicate",
+            "parentId": "fld_auth",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "1.2.1 - Email Duplicado",
+            "description": "Intentar registrar usuario con email existente",
+            "method": "POST",
+            "url": "{{base_url}}/auth/register",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"email\": \"{{test_user_email}}\",\n  \"password\": \"DifferentPass123!\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 400",
+                    "code": "pm.test(\"Status is 400\", function () {\n    pm.response.to.have.status(400);\n});"
+                },
+                {
+                    "name": "Error message indicates duplicate",
+                    "code": "pm.test(\"Error message indicates duplicate\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData.message).to.include('already exists');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_login_success",
+            "parentId": "fld_auth",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.1.1 - Login Exitoso",
+            "description": "Login exitoso con credenciales válidas",
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"email\": \"{{test_user_email}}\",\n  \"password\": \"{{test_user_password}}\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has valid JWT token",
+                    "code": "pm.test(\"Has valid JWT token\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('access_token');\n    pm.expect(jsonData.access_token).to.match(/^eyJ/);\n});"
+                },
+                {
+                    "name": "Update JWT token in environment",
+                    "code": "pm.test(\"Update JWT token in environment\", function () {\n    const jsonData = pm.response.json();\n    pm.environment.set('jwt_token', jsonData.access_token);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_login_invalid",
+            "parentId": "fld_auth",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.2.1 - Credenciales Incorrectas",
+            "description": "Login con password incorrecto",
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"email\": \"{{test_user_email}}\",\n  \"password\": \"WrongPassword123!\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 401",
+                    "code": "pm.test(\"Status is 401\", function () {\n    pm.response.to.have.status(401);\n});"
+                },
+                {
+                    "name": "Error message indicates invalid credentials",
+                    "code": "pm.test(\"Error message indicates invalid credentials\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData.message).to.include('Invalid credentials');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_profile_success",
+            "parentId": "fld_auth",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "3.1.1 - Obtener Perfil",
+            "description": "Obtener perfil de usuario autenticado",
+            "method": "GET",
+            "url": "{{base_url}}/auth/profile",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                }
+            ],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has user data",
+                    "code": "pm.test(\"Has user data\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('id');\n    pm.expect(jsonData).to.have.property('email');\n    pm.expect(jsonData.email).to.eql(pm.environment.get('test_user_email'));\n});"
+                },
+                {
+                    "name": "Response time < 1s",
+                    "code": "pm.test(\"Response time < 1s\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(1000);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_generate_api_key",
+            "parentId": "fld_auth",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "4.1.1 - Generar API Key",
+            "description": "Generar nueva API key para el usuario",
+            "method": "POST",
+            "url": "{{base_url}}/auth/api-keys",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"name\": \"Test API Key\",\n  \"permissions\": [\"read\", \"write\"]\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 201",
+                    "code": "pm.test(\"Status is 201\", function () {\n    pm.response.to.have.status(201);\n});"
+                },
+                {
+                    "name": "Has API key",
+                    "code": "pm.test(\"Has API key\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('apiKey');\n    pm.expect(jsonData.apiKey).to.be.a('string');\n    pm.expect(jsonData.name).to.eql('Test API Key');\n});"
+                },
+                {
+                    "name": "Save API key",
+                    "code": "pm.test(\"Save API key\", function () {\n    const jsonData = pm.response.json();\n    pm.environment.set('api_key', jsonData.apiKey);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_chat_send_simple",
+            "parentId": "fld_chat",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "5.1.1 - Enviar Mensaje Simple",
+            "description": "Enviar mensaje simple al chatbot",
+            "method": "POST",
+            "url": "{{base_url}}/chat/send",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"content\": \"Hola, ¿cómo estás?\",\n  \"model\": \"deepseek-r1:1.5b\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has message response",
+                    "code": "pm.test(\"Has message response\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('message');\n    pm.expect(jsonData.message).to.have.property('content');\n    pm.expect(jsonData.message.content).to.be.a('string');\n    pm.expect(jsonData.message.content.length).to.be.above(0);\n});"
+                },
+                {
+                    "name": "Has conversation ID",
+                    "code": "pm.test(\"Has conversation ID\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('conversationId');\n    pm.environment.set('conversation_id', jsonData.conversationId);\n});"
+                },
+                {
+                    "name": "Response time acceptable",
+                    "code": "pm.test(\"Response time acceptable\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(30000);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_chat_send_unauthorized",
+            "parentId": "fld_chat",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "5.2.1 - Sin Autenticación",
+            "description": "Intentar enviar mensaje sin JWT token",
+            "method": "POST",
+            "url": "{{base_url}}/chat/send",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"content\": \"Hola\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 401",
+                    "code": "pm.test(\"Status is 401\", function () {\n    pm.response.to.have.status(401);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_list_conversations",
+            "parentId": "fld_chat",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "6.1.1 - Listar Conversaciones",
+            "description": "Obtener lista de conversaciones del usuario",
+            "method": "GET",
+            "url": "{{base_url}}/chat/conversations?page=1&limit=10",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                }
+            ],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has conversations array",
+                    "code": "pm.test(\"Has conversations array\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('conversations');\n    pm.expect(jsonData.conversations).to.be.an('array');\n});"
+                },
+                {
+                    "name": "Has pagination",
+                    "code": "pm.test(\"Has pagination\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('pagination');\n    pm.expect(jsonData.pagination).to.have.property('page');\n    pm.expect(jsonData.pagination).to.have.property('total');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_create_conversation",
+            "parentId": "fld_chat",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "6.1.2 - Crear Conversación",
+            "description": "Crear nueva conversación con título personalizado",
+            "method": "POST",
+            "url": "{{base_url}}/chat/conversations",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"title\": \"Mi Conversación de Prueba\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 201",
+                    "code": "pm.test(\"Status is 201\", function () {\n    pm.response.to.have.status(201);\n});"
+                },
+                {
+                    "name": "Has conversation data",
+                    "code": "pm.test(\"Has conversation data\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('id');\n    pm.expect(jsonData).to.have.property('title');\n    pm.expect(jsonData.title).to.eql('Mi Conversación de Prueba');\n});"
+                },
+                {
+                    "name": "Save conversation ID",
+                    "code": "pm.test(\"Save conversation ID\", function () {\n    const jsonData = pm.response.json();\n    pm.environment.set('conversation_id', jsonData.id);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_get_conversation_history",
+            "parentId": "fld_chat",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "6.1.3 - Obtener Historial",
+            "description": "Obtener historial completo de una conversación",
+            "method": "GET",
+            "url": "{{base_url}}/chat/conversations/{{conversation_id}}",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                }
+            ],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has conversation object",
+                    "code": "pm.test(\"Has conversation object\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('conversation');\n    pm.expect(jsonData.conversation.id).to.eql(pm.environment.get('conversation_id'));\n});"
+                },
+                {
+                    "name": "Has messages array",
+                    "code": "pm.test(\"Has messages array\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('messages');\n    pm.expect(jsonData.messages).to.be.an('array');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_delete_conversation",
+            "parentId": "fld_chat",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "6.1.4 - Eliminar Conversación",
+            "description": "Eliminar conversación existente",
+            "method": "DELETE",
+            "url": "{{base_url}}/chat/conversations/{{conversation_id}}",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                }
+            ],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Success response",
+                    "code": "pm.test(\"Success response\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('success');\n    pm.expect(jsonData.success).to.be.true;\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_health_detailed",
+            "parentId": "fld_health",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "7.1.2 - Health Check Detallado",
+            "description": "Obtener información detallada del estado del servicio",
+            "method": "GET",
+            "url": "{{base_url}}/health/detailed",
+            "headers": [],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has memory information",
+                    "code": "pm.test(\"Has memory information\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('memory');\n    pm.expect(jsonData.memory).to.have.property('heapUsed');\n});"
+                },
+                {
+                    "name": "Has environment information",
+                    "code": "pm.test(\"Has environment information\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('environment');\n    pm.expect(jsonData.environment).to.have.property('nodeVersion');\n});"
+                }
+            ],
+            "_type": "request"
+        }
+    ]
+}

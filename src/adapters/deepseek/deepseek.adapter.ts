@@ -9,7 +9,7 @@ import {
 
 @Injectable()
 export class DeepSeekAdapter extends BaseAiAdapter {
-  private readonly baseUrl = 'https://api.deepseek.com/v1';
+  private readonly baseUrl = 'http://localhost:8080/api/v1';
 
   constructor(configService: ConfigService) {
     super(configService);
@@ -120,7 +120,7 @@ export class DeepSeekAdapter extends BaseAiAdapter {
   }
 
   protected getDefaultModel(): string {
-    return 'deepseek-chat';
+    return 'deepseek-r1:1.5b';
   }
 
   protected getApiBaseUrl(): string {

@@ -1,0 +1,341 @@
+{
+    "_type": "export",
+    "__export_format": 4,
+    "__export_date": "2025-09-19T17:18:00.000Z",
+    "__export_source": "insomnia.desktop.app:v8.0.0",
+    "resources": [
+        {
+            "_id": "wrk_001",
+            "parentId": null,
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "DeepSeek Local API Testing",
+            "description": "Colección completa de pruebas para API local DeepSeek",
+            "_type": "workspace"
+        },
+        {
+            "_id": "env_001",
+            "parentId": "wrk_001",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "Local DeepSeek",
+            "data": {
+                "base_url": "http://localhost:8080/api/v1",
+                "api_key": "sk-4a478b7a14c44e10b8342c526be652b7",
+                "timeout": "30000",
+                "test_model": "deepseek-r1:1.5b",
+                "invalid_model": "deepseek-chat"
+            },
+            "_type": "environment"
+        },
+        {
+            "_id": "fld_001",
+            "parentId": "wrk_001",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "1. Models Endpoint",
+            "description": "Pruebas para GET /api/v1/models",
+            "_type": "request_group"
+        },
+        {
+            "_id": "fld_002",
+            "parentId": "wrk_001",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2. Chat Completions",
+            "description": "Pruebas para POST /api/v1/chat/completions",
+            "_type": "request_group"
+        },
+        {
+            "_id": "fld_003",
+            "parentId": "wrk_001",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "3. Error Cases",
+            "description": "Pruebas de manejo de errores",
+            "_type": "request_group"
+        },
+        {
+            "_id": "req_001",
+            "parentId": "fld_001",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "1.1.1 - Conectividad Básica (Sin Auth)",
+            "description": "Verificar que el servidor responde sin autenticación",
+            "method": "GET",
+            "url": "{{base_url}}/models",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 401",
+                    "code": "pm.test(\"Status is 401\", function () {\n    pm.response.to.have.status(401);\n});"
+                },
+                {
+                    "name": "Response time < 1s",
+                    "code": "pm.test(\"Response time < 1s\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(1000);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_002",
+            "parentId": "fld_001",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "1.2.1 - Lista de Modelos (Con Auth)",
+            "description": "Obtener lista completa de modelos disponibles",
+            "method": "GET",
+            "url": "{{base_url}}/models",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{api_key}}"
+                }
+            ],
+            "authentication": {},
+            "body": {},
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has data array",
+                    "code": "pm.test(\"Has data array\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('data');\n    pm.expect(jsonData.data).to.be.an('array');\n});"
+                },
+                {
+                    "name": "Contains deepseek-r1:1.5b",
+                    "code": "pm.test(\"Contains deepseek-r1:1.5b\", function () {\n    const jsonData = pm.response.json();\n    const modelIds = jsonData.data.map(m => m.id);\n    pm.expect(modelIds).to.include('deepseek-r1:1.5b');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_003",
+            "parentId": "fld_002",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.1.1 - Chat Simple (Caso Éxito)",
+            "description": "Prueba básica de chat completion",
+            "method": "POST",
+            "url": "{{base_url}}/chat/completions",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{api_key}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"model\": \"{{test_model}}\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Hola, ¿cómo estás?\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 100\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Has choices array",
+                    "code": "pm.test(\"Has choices array\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData).to.have.property('choices');\n    pm.expect(jsonData.choices).to.be.an('array').that.is.not.empty;\n});"
+                },
+                {
+                    "name": "Has message content",
+                    "code": "pm.test(\"Has message content\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData.choices[0].message).to.have.property('content');\n    pm.expect(jsonData.choices[0].message.content).to.be.a('string').that.is.not.empty;\n});"
+                },
+                {
+                    "name": "Response time < 10s",
+                    "code": "pm.test(\"Response time < 10s\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(10000);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_004",
+            "parentId": "fld_002",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.1.2 - Conversación Multi-turno",
+            "description": "Prueba de conversación con contexto",
+            "method": "POST",
+            "url": "{{base_url}}/chat/completions",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{api_key}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"model\": \"{{test_model}}\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres un asistente útil y amable.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"¿Cuál es la capital de Francia?\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"content\": \"La capital de Francia es París.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"¿Cuántos habitantes tiene?\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"max_tokens\": 150\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Maintains context",
+                    "code": "pm.test(\"Maintains context\", function () {\n    const jsonData = pm.response.json();\n    const content = jsonData.choices[0].message.content.toLowerCase();\n    pm.expect(content).to.include('parís') || pm.expect(content).to.include('paris');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_005",
+            "parentId": "fld_003",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.2.1 - Modelo No Disponible",
+            "description": "Prueba de error con modelo inválido",
+            "method": "POST",
+            "url": "{{base_url}}/chat/completions",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{api_key}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"model\": \"{{invalid_model}}\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Hola\"\n    }\n  ]\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 400",
+                    "code": "pm.test(\"Status is 400\", function () {\n    pm.response.to.have.status(400);\n});"
+                },
+                {
+                    "name": "Error message contains 'Model not found'",
+                    "code": "pm.test(\"Error message contains 'Model not found'\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData.detail).to.include('Model not found');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_006",
+            "parentId": "fld_003",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.2.2 - Payload Sin Messages",
+            "description": "Prueba de validación de campos requeridos",
+            "method": "POST",
+            "url": "{{base_url}}/chat/completions",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{api_key}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"model\": \"{{test_model}}\"\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 400",
+                    "code": "pm.test(\"Status is 400\", function () {\n    pm.response.to.have.status(400);\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_007",
+            "parentId": "fld_002",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.3.1 - Caracteres Especiales",
+            "description": "Prueba de manejo de caracteres Unicode",
+            "method": "POST",
+            "url": "{{base_url}}/chat/completions",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{api_key}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"model\": \"{{test_model}}\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Explica qué significa este emoji: 🤖💻🚀 y cómo se relaciona con la programación\"\n    }\n  ],\n  \"max_tokens\": 150\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                },
+                {
+                    "name": "Handles Unicode correctly",
+                    "code": "pm.test(\"Handles Unicode correctly\", function () {\n    const jsonData = pm.response.json();\n    pm.expect(jsonData.choices[0].message.content).to.be.a('string');\n});"
+                }
+            ],
+            "_type": "request"
+        },
+        {
+            "_id": "req_008",
+            "parentId": "fld_002",
+            "modified": 1638360000000,
+            "created": 1638360000000,
+            "name": "2.3.4 - Temperature = 0",
+            "description": "Prueba de respuestas determinísticas",
+            "method": "POST",
+            "url": "{{base_url}}/chat/completions",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{api_key}}"
+                }
+            ],
+            "authentication": {},
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"model\": \"{{test_model}}\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Di un número aleatorio entre 1 y 10\"\n    }\n  ],\n  \"temperature\": 0,\n  \"max_tokens\": 20\n}"
+            },
+            "tests": [
+                {
+                    "name": "Status is 200",
+                    "code": "pm.test(\"Status is 200\", function () {\n    pm.response.to.have.status(200);\n});"
+                }
+            ],
+            "_type": "request"
+        }
+    ]
+}
